@@ -1,0 +1,331 @@
+/* Pharos — design tokens
+   Metaphor: laboratory notebook × Swiss grid × Kandinsky shape/color on functional elements
+*/
+
+:root {
+  /* Paper theme (default) */
+  --paper: #F3EEE3;
+  --paper-2: #EAE3D2;         /* ruled line tint */
+  --paper-edge: #D9D0BA;
+  --ink: #0E0E0C;
+  --ink-2: #2A2823;
+  --ink-3: #5A574E;
+  --ink-4: #8A8679;
+  --ink-5: #B6B2A3;
+
+  /* Kandinsky — functional */
+  --k-yellow: #F2C230;   /* △ commander */
+  --k-red:    #C8342B;   /* ■ worker */
+  --k-blue:   #2E5FB8;   /* ○ supervisor */
+
+  /* Verdict (maps directly to Verdict.ts GREEN/YELLOW/RED — but we recolor:
+     GREEN uses ink; RED is Kandinsky red; YELLOW is Kandinsky yellow. Swiss restraint. */
+  --verdict-green: #1E5F3E;
+  --verdict-yellow: var(--k-yellow);
+  --verdict-red: var(--k-red);
+
+  /* Constructivist accent (used sparingly: one diagonal stripe on run header) */
+  --construct: #C8342B;
+
+  /* Grid */
+  --col: 96px;
+  --gutter: 24px;
+  --margin: 48px;
+  --baseline: 8px;
+
+  /* Type */
+  --f-display: "GT Alpina Standard", "Canela", "EB Garamond", "Times New Roman", serif;
+  --f-sans: "Söhne", "Neue Haas Grotesk", "Inter", system-ui, sans-serif;
+  --f-mono: "Söhne Mono", "JetBrains Mono", "IBM Plex Mono", ui-monospace, monospace;
+
+  /* Scale — hand-picked, 8px baseline friendly */
+  --fs-micro: 10.5px;
+  --fs-caption: 12px;
+  --fs-body: 14px;
+  --fs-body-lg: 16px;
+  --fs-title: 20px;
+  --fs-lede: 28px;
+  --fs-display: 44px;
+  --fs-masthead: 72px;
+
+  --lh-tight: 1.08;
+  --lh-snug: 1.3;
+  --lh-body: 1.5;
+  --lh-loose: 1.7;
+
+  /* Motion */
+  --ease-paper: cubic-bezier(.2, .7, .2, 1);
+  --dur-fast: 140ms;
+  --dur: 260ms;
+  --dur-slow: 520ms;
+}
+
+[data-theme="dark"] {
+  --paper: #0E0E0C;
+  --paper-2: #181714;
+  --paper-edge: #262520;
+  --ink: #EDE6D3;
+  --ink-2: #D4CDB8;
+  --ink-3: #9A9383;
+  --ink-4: #6C6759;
+  --ink-5: #3E3C35;
+
+  --k-yellow: #F2C230;
+  --k-red: #E14A41;
+  --k-blue: #5D8CE3;
+
+  --verdict-green: #4FAE78;
+  --verdict-yellow: var(--k-yellow);
+  --verdict-red: var(--k-red);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0; padding: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--f-sans);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-feature-settings: "ss01", "ss02", "cv11", "liga", "kern";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Paper texture — extremely subtle ruled baselines on main canvas */
+.paper-rule {
+  background-image:
+    linear-gradient(var(--paper-2) 1px, transparent 1px);
+  background-size: 100% 32px;
+  background-position: 0 7px;
+}
+
+/* Typography helpers */
+.display { font-family: var(--f-display); font-weight: 500; font-style: italic; letter-spacing: -0.01em; line-height: var(--lh-tight); }
+.mono { font-family: var(--f-mono); font-feature-settings: "zero", "ss01"; }
+.caps { text-transform: uppercase; letter-spacing: 0.12em; font-size: var(--fs-micro); font-weight: 500; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* Section mark § */
+.section-mark {
+  font-family: var(--f-display);
+  font-style: italic;
+  color: var(--ink-3);
+}
+
+/* Focus ring */
+:focus-visible { outline: 2px solid var(--k-blue); outline-offset: 2px; }
+
+/* Scrollbars — subtle */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: var(--ink-5); border-radius: 0; }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* Rule lines */
+.rule { border: 0; border-top: 1px solid var(--paper-edge); margin: 0; }
+.rule-heavy { border: 0; border-top: 2px solid var(--ink); margin: 0; }
+.rule-ink { border: 0; border-top: 1px solid var(--ink); margin: 0; }
+
+/* Agent shape stamps — Kandinsky */
+.stamp {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; flex: none;
+  color: white; font-family: var(--f-mono); font-size: 9px;
+}
+
+/* Taped-in evidence card */
+.taped {
+  position: relative;
+  background: var(--paper);
+  border: 1px solid var(--paper-edge);
+  box-shadow: 2px 3px 0 rgba(0,0,0,0.04);
+}
+.taped::before, .taped::after {
+  content: "";
+  position: absolute; top: -8px; width: 36px; height: 14px;
+  background: rgba(242, 194, 48, 0.35);
+  border: 1px solid rgba(242, 194, 48, 0.5);
+  transform: rotate(-2deg);
+}
+.taped::before { left: 12px; }
+.taped::after { right: 12px; transform: rotate(3deg); }
+
+/* Button — Swiss */
+.btn {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 10px 16px;
+  font-family: var(--f-sans); font-size: var(--fs-body); font-weight: 500;
+  background: var(--ink); color: var(--paper);
+  border: 1px solid var(--ink);
+  cursor: pointer;
+  transition: transform var(--dur-fast) var(--ease-paper), background var(--dur-fast) var(--ease-paper);
+}
+.btn:hover { transform: translate(-1px, -1px); box-shadow: 3px 3px 0 var(--ink-5); }
+.btn:active { transform: translate(0, 0); box-shadow: none; }
+.btn-ghost { background: transparent; color: var(--ink); }
+.btn-ghost:hover { background: var(--ink); color: var(--paper); }
+
+/* Diagonal constructivist accent — for run header only */
+.diagonal-band {
+  position: absolute; inset: 0;
+  background: repeating-linear-gradient(
+    -67deg,
+    transparent 0 22px,
+    var(--construct) 22px 24px,
+    transparent 24px 46px
+  );
+  opacity: 0.14;
+  pointer-events: none;
+}
+
+/* Caret for typewriter */
+@keyframes caret { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+.caret::after {
+  content: "▍"; margin-left: 2px; color: var(--k-red);
+  animation: caret 1s steps(1, end) infinite;
+}
+
+/* Stream entry fade-in */
+@keyframes paperfade {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.paperfade { animation: paperfade var(--dur) var(--ease-paper) both; }
+
+/* Tape animation when pinned */
+@keyframes tapedrop {
+  from { opacity: 0; transform: translateY(-6px) rotate(-0.6deg); }
+  to { opacity: 1; transform: translateY(0) rotate(-0.2deg); }
+}
+.tapedrop { animation: tapedrop 420ms var(--ease-paper) both; }
+
+/* Inline link */
+.ilink { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+.ilink:hover { text-decoration-thickness: 2px; }
+
+/* Utility: grid columns for notebook layout */
+.notebook {
+  display: grid;
+  grid-template-columns:
+    [margin] 88px
+    [main-start] 1fr
+    [main-end] 320px
+    [rail-end];
+  gap: 0;
+}
+@media (max-width: 1280px) {
+  .notebook { grid-template-columns: 72px 1fr 280px; }
+}
+@media (max-width: 1024px) {
+  .notebook { grid-template-columns: 56px 1fr; }
+  .notebook > .rail { display: none; }
+}
+
+/* Swiss label (caption over a rule) */
+.swiss-label {
+  display: flex; align-items: baseline; justify-content: space-between;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--ink);
+  margin-bottom: 14px;
+}
+.swiss-label .k { font-size: var(--fs-micro); text-transform: uppercase; letter-spacing: 0.14em; font-weight: 500; }
+.swiss-label .v { font-family: var(--f-mono); font-size: var(--fs-micro); color: var(--ink-3); }
+
+/* ============================================================
+   RESPONSIVE — tablet (≤1024px) and mobile (≤720px)
+   Strategy: utility classes on layouts that otherwise use
+   inline `gridTemplateColumns` (JSX). Media queries flip them to stacked.
+   ============================================================ */
+
+/* Two-column layouts used in screens: plan, clarify, empty, live */
+.two-col { display: grid; gap: 48px; }
+.two-col.col-1fr-320 { grid-template-columns: 1fr 320px; }
+.two-col.col-1fr-280 { grid-template-columns: 1fr 280px; }
+.two-col.col-1fr-440 { grid-template-columns: 1fr 440px; }
+
+/* Screen-level padding wrappers */
+.screen-pad { padding: 36px 72px 72px; }
+.screen-pad-tight { padding: 24px 48px 60px; }
+
+/* Top rail 5-column grid */
+.top-rail {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 10px 28px;
+  min-width: 0;
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+.top-rail > * { min-width: 0; }
+.top-rail .spacer { flex: 1; }
+
+/* Run header diagonal (desktop decorative element) */
+@media (max-width: 1180px) {
+  .two-col.col-1fr-440 { grid-template-columns: 1fr 360px; gap: 20px; }
+  .two-col.col-1fr-320 { gap: 32px; }
+  .top-rail .queue-chip { display: none; }
+}
+
+@media (max-width: 1024px) {
+  .screen-pad { padding: 28px 40px 56px; }
+  .screen-pad-tight { padding: 20px 32px 48px; }
+
+  .two-col.col-1fr-440,
+  .two-col.col-1fr-320,
+  .two-col.col-1fr-280 {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+  /* Sidebar rail content moves below main */
+  .two-col .rail-col { order: 2; }
+
+  .top-rail { padding: 10px 20px; gap: 12px; }
+  .top-rail .stepper-host { display: none; }
+  .top-rail .queue-chip { display: none; }
+}
+
+@media (max-width: 720px) {
+  .screen-pad { padding: 20px 18px 40px; }
+  .screen-pad-tight { padding: 16px 16px 36px; }
+
+  .top-rail { padding: 8px 14px; gap: 10px; }
+  .top-rail .brand-host { display: none; }
+
+  .app-main.drawer-open { padding-left: 0 !important; }
+}
+
+/* Article figure strip: 4 → 2 → 1 columns */
+@media (max-width: 900px) {
+  .article-figstrip { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+}
+@media (max-width: 520px) {
+  .article-figstrip { grid-template-columns: 1fr !important; }
+}
+
+/* Empty-state hero banner — scale with viewport */
+@media (max-width: 720px) {
+  .empty-hero { font-size: clamp(38px, 12vw, 64px) !important; line-height: 1.05 !important; }
+}
+
+/* Run header diagonal band can overflow on narrow screens */
+@media (max-width: 720px) {
+  .run-header-diag { display: none !important; }
+}
+
+/* Tweaks panel — ensure doesn't go off-screen on mobile */
+@media (max-width: 720px) {
+  .tweaks-panel { right: 8px !important; bottom: 8px !important; left: 8px !important; width: auto !important; max-width: calc(100vw - 16px) !important; }
+}
+
+/* Mobile-only hide / shrink utilities */
+@media (max-width: 720px) {
+  .hide-mobile { display: none !important; }
+  .empty-header { padding: 20px 18px 14px !important; }
+  .empty-body { padding: 28px 18px !important; }
+}
+@media (min-width: 721px) {
+  .only-mobile { display: none !important; }
+}
+

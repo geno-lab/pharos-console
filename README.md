@@ -2,46 +2,58 @@
 
 Frontend for [Pharos](https://github.com/geno-lab/pharos) — the open agent framework.
 
-This repo is deliberately empty. It holds the design brief, API contract, and type-binding instructions; the tech stack and implementation are up to the maintainer.
-
-## What goes here
-
-A single-page (or multi-page) app that:
-
-1. Lets a user submit a research task (`POST /api/run`)
-2. Renders the live task graph and event stream over WebSocket (`/ws`)
-3. Browses the available skills (`GET /api/skills`)
-4. Restores state on refresh via `GET /api/status` + (eventually) a run-history endpoint
-
-It deploys independently of the backend: static output goes to Cloudflare Pages / similar, the backend (`pharosd`) lives elsewhere behind whatever reverse proxy you pick.
-
-## Backend dependency
-
-Pharos `>= 0b40c73` (post-Phase-2). The backend exposes:
-
-- REST: `POST /api/run`, `GET /api/skills`, `GET /api/status`
-- WebSocket: `/ws` — typed `Event` stream, ping every 30s
-
-Full contract: [`geno-lab/pharos/docs/API.md`](https://github.com/geno-lab/pharos/blob/main/docs/API.md)
-
-TypeScript types: [`geno-lab/pharos/bindings/`](https://github.com/geno-lab/pharos/tree/main/bindings) — see [`docs/BINDINGS.md`](docs/BINDINGS.md) for consumption options.
-
-## Design
-
-Delivered. Full spec + working HTML reference + all tokens + 5-screen JSX lives in [`design/`](design/). Entry point: [`design/README.md`](design/README.md) (329 lines of spec). Summary + backend-gap analysis: [`docs/DESIGN.md`](docs/DESIGN.md).
-
-Visual language: paper/notebook × Swiss grid × Kandinsky shape↔colour (△ commander / ■ worker / ○ supervisor) × Tschichold asymmetric typography × constructivist accent. Fraunces / Inter / JetBrains Mono shipped; GT Alpina / Söhne production.
+**Stack:** Vite + React 19 + TypeScript + Zustand + vanilla CSS (tokens).
 
 ## Status
 
-- [x] Design received and archived
-- [x] Backend API contract locked (see `geno-lab/pharos/docs/API.md`)
-- [ ] Tech stack chosen
-- [ ] Tokens ported into chosen styling system
-- [ ] Bindings consumption wired in
-- [ ] Screens implemented (empty / clarify / plan / run-live / article)
-- [ ] Cross-origin deploy verified against a hosted pharosd
+- [x] Design received and archived under [`design/`](design/)
+- [x] Backend API contract locked
+- [x] Bindings consumed from `bindings/` (ts-rs export)
+- [x] Shell + empty screen + live run screen (v1 scope)
+- [ ] Clarify / plan-confirm / commander-decision (blocked on backend work)
+- [ ] DAG SVG view
+- [ ] Skills / runs / drafts drawer
+- [ ] Article / LaTeX view
+
+See [`docs/DESIGN.md`](docs/DESIGN.md) for the backend-gap map.
+
+## Develop
+
+Backend needs to run somewhere (locally or remote). Start pharosd on its default port:
+
+```sh
+# in the pharos backend repo
+cargo run --release -- --web --port 3000
+```
+
+Then:
+
+```sh
+npm install
+npm run dev
+# → http://localhost:5173  (Vite proxies /api and /ws to :3000)
+```
+
+Edit `vite.config.ts` to point at a remote backend if you're not running pharosd locally.
+
+## Build
+
+```sh
+npm run build
+```
+
+For the mini_m2 subpath deploy (served at `/pharos/` behind nginx):
+
+```sh
+npm run build:pharos
+```
+
+Output lands in `dist/`.
+
+## Deploy
+
+See [`docs/DEPLOY.md`](docs/DEPLOY.md).
 
 ## License
 
-MIT — matches the upstream backend.
+MIT.

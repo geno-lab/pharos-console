@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pharos — a notebook for research agents</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="tokens.css?v=6" />
+<style>
+  /* Swap in the Google fallback families behind our CSS var names */
+  :root {
+    --f-display: "Fraunces", "GT Alpina Standard", "EB Garamond", "Times New Roman", serif;
+    --f-sans: "Inter", "Söhne", "Neue Haas Grotesk", system-ui, sans-serif;
+    --f-mono: "JetBrains Mono", "Söhne Mono", ui-monospace, monospace;
+  }
+  .app-main {
+    transition: padding-left 340ms var(--ease-paper);
+    min-height: 100vh;
+  }
+
+  /* --- TOP RAIL (inlined to bypass any external-CSS cache) --- */
+  .top-rail {
+    display: flex !important;
+    align-items: center !important;
+    flex-wrap: nowrap !important;
+    gap: 18px !important;
+    padding: 10px 28px !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+  }
+  .top-rail > * { min-width: 0; flex: none; }
+  .top-rail .spacer { flex: 1 1 auto !important; min-width: 12px; }
+  .top-rail .stepper-host { min-width: 0; overflow: hidden; flex: 0 1 auto; }
+
+  @media (max-width: 1180px) {
+    .top-rail .queue-chip { display: none !important; }
+  }
+  @media (max-width: 1024px) {
+    .top-rail { padding: 10px 20px !important; gap: 12px !important; }
+    .top-rail .stepper-host { display: none !important; }
+  }
+  @media (max-width: 720px) {
+    .top-rail { padding: 8px 14px !important; gap: 10px !important; }
+    .top-rail .brand-host { display: none !important; }
+  }
+
+  /* --- RUN HEADER (topic panel at top of clarify/plan/live/article) --- */
+  .run-header-grid {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 24px;
+    align-items: start;
+  }
+  .run-header-phase { text-align: right; }
+  @media (max-width: 760px) {
+    .run-header-grid {
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+    .run-header-phase { text-align: left; }
+    .run-header-meta { display: flex; gap: 10px; align-items: baseline; }
+  }
+
+  /* --- SECTION HEADER STRIP (§ III · initial task graph  …  [btns]) --- */
+  .section-header-strip {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .section-header-actions {
+    margin-left: auto;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  @media (max-width: 760px) {
+    .section-header-strip { gap: 8px; }
+    .section-header-actions { margin-left: 0; width: 100%; }
+    .section-header-actions .btn { flex: 1; white-space: nowrap; }
+  }
+
+  /* --- ARTICLE TOOLBAR --- */
+  .article-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  .article-toolbar-stats {
+    min-width: 0;
+    flex: 1 1 200px;
+  }
+  .article-toolbar-actions {
+    margin-left: auto;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  @media (max-width: 760px) {
+    .article-toolbar-stats { flex: 1 1 100%; order: 3; font-size: 10.5px; }
+    .article-toolbar-actions { margin-left: 0; width: 100%; }
+    .article-toolbar-actions .btn { flex: 1; min-width: 0; }
+  }
+  @media (max-width: 900px) {
+    .article-figstrip { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  }
+  @media (max-width: 520px) {
+    .article-figstrip { grid-template-columns: 1fr !important; }
+  }
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="shapes.jsx"></script>
+<script type="text/babel" src="mock-data.jsx"></script>
+<script type="text/babel" src="progress-mark.jsx"></script>
+<script type="text/babel" src="event-stream.jsx"></script>
+<script type="text/babel" src="task-graph.jsx"></script>
+<script type="text/babel" src="drawer.jsx"></script>
+<script type="text/babel" src="screens/empty.jsx"></script>
+<script type="text/babel" src="screens/clarify.jsx"></script>
+<script type="text/babel" src="screens/plan.jsx"></script>
+<script type="text/babel" src="screens/live.jsx"></script>
+<script type="text/babel" src="screens/article.jsx"></script>
+
+<script type="text/babel">
+const { useState, useEffect, useMemo } = React;
+
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "theme": "paper",
+  "progressStyle": "minimal",
+  "eventDensity": "grouped",
+  "showDiagonal": true,
+  "showBranch": true,
+  "startState": "empty"
+}/*EDITMODE-END*/;
+
+function App() {
+  const { values, setValue } = useTweaks(TWEAK_DEFAULTS);
+
+  // Apply theme to document.
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", values.theme === "dark" ? "dark" : "paper");
+  }, [values.theme]);
+
+  // --- State machine ---
+  // empty → clarify → plan → run-live → run-extend → writing → article
+  const [state, setState] = useState(values.startState || "empty");
+  const [topic, setTopic] = useState(MOCK_TOPIC);
+  const [answers, setAnswers] = useState({});
+  const [branch, setBranch] = useState(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [eventMode, setEventMode] = useState(values.eventDensity);
+  const [eventsShown, setEventsShown] = useState(MOCK_EVENTS.length); // start fully streamed; we'll re-run on entering live
+  const [phase, setPhase] = useState("executing"); // executing | reviewing | extending | writing | done
+  const [extended, setExtended] = useState(false);
+
+  // Respond to tweaks
+  useEffect(() => setEventMode(values.eventDensity), [values.eventDensity]);
+
+  // When state becomes run-live: stream events
+  useEffect(() => {
+    if (state !== "run-live") return;
+    setEventsShown(1);
+    setPhase("executing");
+    let i = 1;
+    const id = setInterval(() => {
+      i++;
+      setEventsShown(i);
+      if (i >= MOCK_EVENTS.length) {
+        clearInterval(id);
+        setTimeout(() => setPhase("reviewing"), 600);
+      }
+    }, 900);
+    return () => clearInterval(id);
+  }, [state]);
+
+  // Derived: step & step title for progress
+  const steps = useMemo(() => {
+    const g = MOCK_GRAPH_INITIAL.nodes.concat(extended ? MOCK_GRAPH_EXTENSION.nodes : []);
+    return g.map(n => ({ id: n.id, title: n.title, depth: n.depth || 0 }));
+  }, [extended]);
+
+  const currentStep = useMemo(() => {
+    if (state === "plan") return 0;
+    if (state === "writing") return steps.length - 1;
+    if (state === "article") return steps.length;
+    if (state === "run-live") {
+      const doneCount = MOCK_EVENTS.slice(0, eventsShown).filter(e => e.type === "node_done").length;
+      return Math.max(1, doneCount + 1);
+    }
+    return 0;
+  }, [state, eventsShown, steps.length]);
+
+  const currentTitle = state === "run-live"
+    ? (steps[Math.min(currentStep - 1, steps.length - 1)]?.title || "")
+    : "";
+
+  const progressEl = (
+    <ProgressMark
+      mode={values.progressStyle}
+      current={currentStep}
+      total={steps.length}
+      steps={steps}
+      currentTitle={currentTitle}
+    />
+  );
+
+  const events = MOCK_EVENTS.slice(0, eventsShown);
+
+  // Handlers
+  const onSubmit = ({ text, mode }) => {
+    setTopic(text || MOCK_TOPIC);
+    setAnswers({});
+    setBranch(null);
+    setState("clarify");
+  };
+
+  const onAnswer = (qid, optId, divergent) => {
+    setAnswers(a => {
+      const next = { ...a };
+      if (optId === null) delete next[qid];
+      else next[qid] = optId;
+      return next;
+    });
+    if (optId && divergent && qid === "q1") {
+      setBranch({ ...MOCK_BRANCH, active: false });
+    }
+  };
+
+  const onSwitchBranch = (b) => {
+    if (!branch) return;
+    setBranch(br => br ? { ...br, active: b !== "main" } : br);
+  };
+
+  const goStart = () => setState("plan");
+  const execute = () => setState("run-live");
+
+  const onCommanderDecide = (choice) => {
+    if (choice === "write") {
+      setState("writing");
+      setTimeout(() => setState("article"), 4200); // give the writing progress a moment before revealing the PDF
+    }
+  };
+  const onExtend = () => {
+    setExtended(true);
+    setPhase("extending");
+  };
+
+  // Reset shortcut for demo
+  const reset = () => {
+    setState("empty"); setAnswers({}); setBranch(null); setExtended(false); setEventsShown(MOCK_EVENTS.length);
+  };
+
+  return (
+    <div>
+      <Drawer open={drawerOpen} onClose={() => setDrawerOpen(false)} onGoState={setState} />
+
+      <main className={"app-main" + (drawerOpen ? " drawer-open" : "")} style={{ paddingLeft: drawerOpen ? 360 : 0 }}>
+        <TopRail
+          onOpenDrawer={() => setDrawerOpen(true)}
+          state={state}
+          onReset={reset}
+          onGoState={setState}
+          runId={"r-1043"}
+          taskQueue={[
+            { id: "r-1044", title: "FlashAttention-3 comparison" },
+            { id: "r-1045", title: "DPO length-bias replication" },
+          ]}
+        />
+
+        <div style={{ maxWidth: 1520, margin: "0 auto" }}>
+          {state === "empty" && <EmptyState onSubmit={onSubmit} onOpenDrawer={() => setDrawerOpen(true)} />}
+
+          {state === "clarify" && (
+            <Clarify
+              topic={topic}
+              qs={MOCK_CLARIFICATIONS}
+              answers={answers}
+              onAnswer={onAnswer}
+              onConfirm={goStart}
+              branch={values.showBranch && branch ? branch : null}
+              onSwitchBranch={onSwitchBranch}
+            />
+          )}
+
+          {state === "plan" && (
+            <PlanConfirm
+              topic={topic}
+              graph={MOCK_GRAPH_INITIAL}
+              onStart={execute}
+              onEdit={() => setState("clarify")}
+              branch={values.showBranch && branch ? branch : null}
+              onSwitchBranch={onSwitchBranch}
+            />
+          )}
+
+          {(state === "run-live" || state === "writing") && (
+            <LiveRun
+              topic={topic}
+              graph={MOCK_GRAPH_INITIAL}
+              extension={MOCK_GRAPH_EXTENSION}
+              events={events}
+              progressEl={progressEl}
+              branch={values.showBranch && branch ? branch : null}
+              onSwitchBranch={onSwitchBranch}
+              phase={phase}
+              extended={extended}
+              eventMode={eventMode}
+              onEventMode={setEventMode}
+              onCommanderDecide={onCommanderDecide}
+              onExtend={onExtend}
+            />
+          )}
+
+          {(state === "article" || state === "writing") && (
+            <ArticleScreen
+              topic={topic}
+              phase={state === "writing" ? "writing" : "done"}
+              onBack={() => setState("run-live")}
+              branch={values.showBranch && branch ? branch : null}
+            />
+          )}
+        </div>
+
+        <Footer />
+      </main>
+
+      <TweaksUI values={values} setValue={setValue} state={state} onGoState={setState} />
+    </div>
+  );
+}
+
+function TopRail({ onOpenDrawer, state, onReset, onGoState, runId, taskQueue }) {
+  if (state === "empty") return null;
+  return (
+    <div className="top-rail" style={{
+      borderBottom: "1px solid var(--paper-edge)",
+      background: "var(--paper)",
+      position: "sticky", top: 0, zIndex: 20,
+    }}>
+      <button onClick={onOpenDrawer} className="btn btn-ghost" style={{ padding: "6px 12px", flex: "none" }}>
+        <span className="section-mark" style={{ fontSize: 16 }}>§</span> notebook
+      </button>
+      <div className="brand-host" style={{ display: "flex", alignItems: "baseline", gap: 10, whiteSpace: "nowrap", flex: "none" }}>
+        <span className="display" style={{ fontSize: 18 }}>pharos</span>
+        <span className="mono" style={{ fontSize: 10.5, color: "var(--ink-4)" }}>{runId} · active</span>
+      </div>
+      <div className="stepper-host" style={{ minWidth: 0, overflow: "hidden" }}>
+        <StateStepper state={state} onGoState={onGoState} />
+      </div>
+      <div className="spacer" />
+      <div className="queue-chip" style={{ flex: "none" }}>
+        <TaskQueueChip queue={taskQueue} />
+      </div>
+      <button onClick={onReset} className="btn btn-ghost" style={{ padding: "6px 12px", flex: "none", whiteSpace: "nowrap" }}>
+        ↺ new task
+      </button>
+    </div>
+  );
+}
+
+function TaskQueueChip({ queue }) {
+  if (!queue || !queue.length) return <span />;
+  return (
+    <div style={{
+      display: "inline-flex", alignItems: "center", gap: 8,
+      padding: "4px 10px",
+      border: "1px dashed var(--ink-4)",
+      fontFamily: "var(--f-mono)", fontSize: 10.5,
+      background: "var(--paper-2)",
+      whiteSpace: "nowrap",
+    }}>
+      <span className="caps" style={{ color: "var(--ink-4)" }}>queue</span>
+      <span style={{ color: "var(--ink-2)" }}>+{queue.length}</span>
+    </div>
+  );
+}
+
+function StateStepper({ state, onGoState }) {
+  const order = [
+    { id: "clarify", label: "clarify" },
+    { id: "plan", label: "plan" },
+    { id: "run-live", label: "run" },
+    { id: "article", label: "writing" },
+  ];
+  // "writing" state folds into the "article" step — same stage, different substate.
+  const currentIdx = state === "writing" ? order.findIndex(o => o.id === "article") : order.findIndex(o => o.id === state);
+  return (
+    <div style={{ display: "flex", gap: 2, marginLeft: 24, flexWrap: "nowrap", overflow: "hidden" }}>
+      {order.map((o, i) => {
+        const active = i === currentIdx;
+        const done = i < currentIdx;
+        return (
+          <button key={o.id} onClick={() => onGoState(o.id)}
+            style={{
+              padding: "4px 10px",
+              fontFamily: "var(--f-mono)", fontSize: 10.5,
+              background: active ? "var(--ink)" : "transparent",
+              color: active ? "var(--paper)" : done ? "var(--ink-2)" : "var(--ink-4)",
+              border: 0, cursor: "pointer",
+              display: "flex", alignItems: "center", gap: 6,
+            }}>
+            <span style={{ opacity: 0.6 }}>§{String(i + 1).padStart(2, "0")}</span>
+            <span>{o.label}</span>
+            {active && state === "writing" && o.id === "article" && (
+              <span style={{ opacity: 0.7, fontSize: 9.5 }}>· running</span>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function Footer() {
+  return (
+    <footer style={{
+      padding: "24px 48px 30px",
+      borderTop: "1px solid var(--paper-edge)",
+      marginTop: 40,
+      display: "flex", alignItems: "baseline", justifyContent: "space-between",
+      fontFamily: "var(--f-mono)", fontSize: 10.5, color: "var(--ink-4)",
+    }}>
+      <span>pharos · a notebook for research agents</span>
+      <span>press T for tweaks · § for notebook</span>
+    </footer>
+  );
+}
+
+function TweaksUI({ values, setValue, state, onGoState }) {
+  return (
+    <TweaksPanel title="Tweaks">
+      <TweakSection title="Theme">
+        <TweakRadio value={values.theme} onChange={v => setValue("theme", v)}
+          options={[{ value: "paper", label: "Paper" }, { value: "dark", label: "Dark" }]} />
+      </TweakSection>
+      <TweakSection title="§ Progress style">
+        <TweakRadio value={values.progressStyle} onChange={v => setValue("progressStyle", v)}
+          options={[
+            { value: "minimal", label: "Minimal — § 03/12 + bar" },
+            { value: "roman", label: "Roman — § III · of · XII" },
+            { value: "tree", label: "Tree — nested text, line-through" },
+          ]} />
+      </TweakSection>
+      <TweakSection title="Event stream density">
+        <TweakRadio value={values.eventDensity} onChange={v => setValue("eventDensity", v)}
+          options={[
+            { value: "grouped", label: "Grouped (readable)" },
+            { value: "firehose", label: "Firehose (debug)" },
+          ]} />
+      </TweakSection>
+      <TweakSection title="Branch UI">
+        <TweakToggle value={values.showBranch} onChange={v => setValue("showBranch", v)}
+          label="Show git-lane when divergent" />
+      </TweakSection>
+      <TweakSection title="Jump to state">
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+          {[
+            ["empty", "Empty"],
+            ["clarify", "Clarify"],
+            ["plan", "Plan"],
+            ["run-live", "Live run"],
+            ["writing", "Writing · in progress"],
+            ["article", "Writing · done"],
+          ].map(([id, label]) => (
+            <button key={id} onClick={() => onGoState(id)}
+              style={{
+                padding: "6px 10px",
+                background: state === id ? "var(--ink)" : "transparent",
+                color: state === id ? "var(--paper)" : "var(--ink)",
+                border: "1px solid var(--ink)",
+                cursor: "pointer",
+                fontFamily: "var(--f-mono)", fontSize: 11,
+              }}>{label}</button>
+          ))}
+        </div>
+      </TweakSection>
+    </TweaksPanel>
+  );
+}
+
+// Keyboard: § (/) for drawer, T handled by tweaks panel
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    window.dispatchEvent(new CustomEvent("pharos:close-drawer"));
+  }
+});
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>

@@ -26,18 +26,20 @@ Full contract: [`geno-lab/pharos/docs/API.md`](https://github.com/geno-lab/pharo
 
 TypeScript types: [`geno-lab/pharos/bindings/`](https://github.com/geno-lab/pharos/tree/main/bindings) — see [`docs/BINDINGS.md`](docs/BINDINGS.md) for consumption options.
 
-## Design direction
+## Design
 
-Being defined. Aesthetic reference points (Bauhaus, Kandinsky's shape↔colour mapping, Müller-Brockmann grid, Tschichold's New Typography, objective photography, Russian constructivism) are what the project is aiming for. See [`docs/DESIGN.md`](docs/DESIGN.md) for the specific decisions that need making before implementation — that doc doubles as the design brief you hand the designer (or yourself).
+Delivered. Full spec + working HTML reference + all tokens + 5-screen JSX lives in [`design/`](design/). Entry point: [`design/README.md`](design/README.md) (329 lines of spec). Summary + backend-gap analysis: [`docs/DESIGN.md`](docs/DESIGN.md).
+
+Visual language: paper/notebook × Swiss grid × Kandinsky shape↔colour (△ commander / ■ worker / ○ supervisor) × Tschichold asymmetric typography × constructivist accent. Fraunces / Inter / JetBrains Mono shipped; GT Alpina / Söhne production.
 
 ## Status
 
+- [x] Design received and archived
+- [x] Backend API contract locked (see `geno-lab/pharos/docs/API.md`)
 - [ ] Tech stack chosen
-- [ ] Design tokens defined
+- [ ] Tokens ported into chosen styling system
 - [ ] Bindings consumption wired in
-- [ ] Task submission form
-- [ ] Live run view (DAG + event stream)
-- [ ] Skills directory page
+- [ ] Screens implemented (empty / clarify / plan / run-live / article)
 - [ ] Cross-origin deploy verified against a hosted pharosd
 
 ## License

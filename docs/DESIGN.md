@@ -1,92 +1,88 @@
-# Design brief
+# Design
 
-This is what I need from you before implementation can start. Everything below maps to a decision that affects code structure.
+Design is delivered and archived under [`design/`](../design/). That bundle is the source of truth — README inside it is 329 lines of spec, with a working HTML reference, all tokens, and all five screens.
 
-## Aesthetic direction (stated)
+## Product concept
 
-- Bauhaus — geometric primitivism, function-first
-- Kandinsky's 1923 Bauhaus questionnaire — yellow↔triangle, red↔square, blue↔circle (use as a rule, bend it deliberately if you want)
-- Müller-Brockmann / Swiss grid — mathematical column system, ratio-based type scale, generous white
-- Jan Tschichold's *The New Typography* — asymmetric composition, sans-serif, functional hierarchy
-- Objective photography (Bernd & Hilla Becher vocabulary) — ordered grids, neutral context, repetition as content
-- Russian constructivism — diagonal energy, bold colour blocks, propaganda-typography confidence
+A notebook-style console for research agents. Paper background × Swiss grid × Kandinsky's shape↔colour grammar × Tschichold asymmetric typography × Russian constructivist accent stripe. Fraunces / Inter / JetBrains Mono (shipped) → GT Alpina / Söhne / Söhne Mono (production, when licensed).
 
-These are directions, not constraints. Contradictions among them (Müller-Brockmann's restraint vs constructivism's loudness) are yours to resolve.
+Five primary states on one canvas:
 
-## Decisions I need (to convert to code)
+1. `empty` — submit a topic or task
+2. `clarify` — commander asks structured questions, user can branch
+3. `plan` — DAG preview, user revises or confirms
+4. `run-live` — DAG executes, events stream, supervisor verdicts inline
+5. `article` — LaTeX compile + final PDF
 
-### 1. Type system
-- Typeface: one sans-serif for UI, optionally a second for data (mono or serif). Name specific faces — Founders Grotesk / Neue Haas Grotesk / Inter / GT America / etc. Licensing matters: pick one with a web-embedding license you can afford.
-- Type scale: give me 5–7 sizes with their line-heights. Modular scale ratio or hand-picked?
-- Weight set: which weights ship? (regular + medium + bold is a common minimum)
-- Use case mapping: `headline`, `title`, `body`, `caption`, `mono` → which size/weight combo each.
+See [`design/README.md`](../design/README.md) for full spec.
 
-### 2. Colour tokens
-- Palette: primary, secondary, neutral ramp, semantic (success / warning / danger / info). Specific hex values, not "red-ish".
-- Shape↔colour rule: if you're applying Kandinsky's mapping, tell me where (e.g. verdict badges? agent-role indicators? node shapes in the DAG?). If you're deliberately breaking it, tell me where.
-- Dark mode: yes/no. If yes, paired palette.
+## Agent-role stamps
 
-### 3. Grid & spacing
-- Column count at each breakpoint (4 / 6 / 12 columns typical). Mobile first or desktop first?
-- Gutter, margin, and baseline grid. Müller-Brockmann commonly uses 4px or 8px baselines.
-- Breakpoints: specific pixel or rem values, not "md / lg / xl".
+Map directly to backend `AgentRole` (ts-rs export at `bindings/AgentRole.ts`):
 
-### 4. Components I'll need styling decisions on
-- Task submission form (textarea + run button + mode selectors)
-- DAG view: node shape, edge style, live state colouring — this is the marquee view and deserves the most attention
-- Event stream: LLM token deltas, tool calls, evaluations. A typographic feed, not a chat bubble tradition.
-- Skills directory: grid or list? Card structure?
-- Navigation: header, sidebar, or diagonal (constructivist)?
-- Empty / loading / error states
+| design stamp | design label | backend role |
+|---|---|---|
+| △ yellow | commander / planner | `commander` |
+| ■ red | worker / agent | `worker` |
+| ○ blue | supervisor / reviewer | `tactical_evaluator`, `strategic_reviewer` |
+| — | (skill selector) | `skill_scout` |
 
-### 5. Motion
-- Is this a thing? Müller-Brockmann is still, Tschichold is still, constructivism can have kinetic energy. Decide whether motion serves the content (event stream arrivals, node state transitions) or is decoration (skip if the latter).
+## Verdict pill
 
-### 6. Iconography
-- Geometric primitives only (consistent with Bauhaus / Kandinsky)? Or imported set (Phosphor / Lucide)?
-- Stroke weight, corner rule, size scale.
+`VerdictPill verdict={GREEN|YELLOW|RED}` — exact match to `bindings/Verdict.ts`.
 
-### 7. Photography / imagery
-- Any imagery at all? For an ops dashboard, usually no. If yes (landing page, empty states): direction.
+## Backend gap map
 
-### 8. Voice / tone
-- Copy is part of design. What's the product voice? Clinical, playful, declarative?
+The design assumes some backend capabilities that aren't built yet. When implementation starts, pick a strategy per gap:
 
-## Deliverables format
+| design expects | backend today | suggested approach |
+|---|---|---|
+| `empty` topic-vs-task mode toggle | `POST /api/run` takes `task` only | add `mode: "topic" \| "task"` to the request body; backend can use it to pick a planning preset |
+| `clarify` — Q&A turns | no clarify phase | two options: (a) implement backend-side clarify agent that emits new `ClarifyTurn` events before planning; (b) fake it in the frontend for v1 (front-end collects answers and concatenates into the task description) |
+| branches | no branch concept in task_graph | v1: skip, default branch only. Add multi-branch support when there's a real use case |
+| `plan` confirm step | backend auto-executes post-planning | add `POST /api/run/{id}/confirm` and a `plan_ready` event that pauses the runtime — requires runtime state machine change |
+| run-live DAG rendering | `graph_built` + `graph_modified` events carry the DAG | ✓ works today; map each `agent_spawned` to a node highlight |
+| supervisor verdict inline | `evaluation { node_id, status: Verdict, feedback }` event | ✓ direct |
+| commander decision (extend vs write) | expansion is currently autonomous | add `commander_decision_needed` event + `POST /api/decision` — runtime pause point |
+| LaTeX compile progress | `latex.write` skill exists but emits generic `tool_*` events | add structured `compile_progress { pass, step, status }` events either from Rust side or from the skill itself |
+| figures panel | no figure-typed events | backend emits `figure_ready { id, caption, uri }` when the skill produces one |
+| run queue `+2` | single-task runtime | Phase 4 territory — deprioritize until hosted mode |
+| drawer: skills tab | `GET /api/skills` returns `SkillInfo[]` | ✓ works today |
+| drawer: runs tab | no history endpoint | `GET /api/runs` + `GET /api/runs/:id` returning replayable event log |
+| drawer: drafts tab | no draft persistence endpoint | once article is compiled, `GET /api/drafts` returns list; artifacts already persist to disk via `src/artifacts.rs` |
 
-Whatever ships to me. Preferred in decreasing order:
+## Event mapping
 
-1. Figma file with components + tokens extractable via Tokens Studio or Variables
-2. Plain markdown spec + a small reference repo of HTML/CSS snippets
-3. Image mocks + a written token list
+Design's event-type vocabulary (in `design/README.md`) vs this project's:
 
-Token definitions in a machine-readable format (JSON / CSS variables / Tokens Studio export) save the most implementation time.
+| design name | backend `Event` variant |
+|---|---|
+| `node_started` | `agent_spawned` |
+| `node_done` | `agent_completed` |
+| `node_failed` | `agent_cancelled` + following `evaluation` with `RED` |
+| `supervisor_verdict` | `evaluation` |
+| `commander_decision` | *new — not emitted yet* |
+| `graph_extended` | `graph_modified` with `change.kind = "expansion"` |
+| `skill_invoked` | `tool_started` |
+| `compile_progress` | *new — not emitted yet* |
 
-## Out of scope for this doc
+The frontend should alias / adapt on ingress; renaming the backend event set to match design vocabulary is also an option if the design names are clearer (they are).
 
-- Tech stack (Astro, React, Svelte, whatever — pick at implementation time)
-- Data flow architecture
-- Backend changes — if the design implies an API you don't have yet, open an issue at geno-lab/pharos
+## Token implementation
 
-## Sitemap (draft — overwrite freely)
+`design/tokens.css` maps 1:1 onto CSS custom properties. Do not `@import` the file verbatim in production — translate:
 
-```
-/             → task submission + live run (single page, two states)
-/skills       → skills directory
-/runs         → run history (once backend supports it)
-/runs/:id     → single run replay
-/about        → optional; framework context
-```
+- Into Tailwind 4 `@theme` blocks if Tailwind is chosen
+- Into stitches / styled-components theme object if styled-approach
+- Into a plain `:root { --... }` + utility class sheet if vanilla CSS
 
-Decide: single-page with state-driven views, or multi-page with router? Affects code layout.
+Tokens in scope: paper/dark colors, Kandinsky functional, verdicts, typography (3 face stacks), size scale (8 steps), line-heights (4), motion (1 easing + 3 durations), grid (96px col / 24px gutter / 48px margin / 8px baseline).
 
-## What I'll do once this is filled in
+## What I need from you before implementation
 
-1. Wire up the tech stack
-2. Import tokens → CSS variables or Tailwind config or equivalent
-3. Build out components per your inventory
-4. Consume `bindings/` types for every wire shape
-5. Connect to a locally-running `pharosd`, verify flows
-6. Deploy to Cloudflare Pages / similar, verify CORS + WS behind proxy
+Nothing — the handoff is complete. What implementation needs to decide (internal):
 
-Ping me in a PR when the brief is ready.
+- Framework: Next.js / Astro-islands / Remix / vanilla React-SPA — pick one based on deploy target
+- Styling: Tailwind 4 vs vanilla CSS + tokens file vs CSS-in-JS — tokens are expressive enough for any of these
+- State: Zustand vs TanStack Query vs nothing (for an ops dashboard with live WS, a tiny Zustand store + a `useEvents()` hook is usually enough)
+- Bindings consumption: pick an option from `docs/BINDINGS.md`

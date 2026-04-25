@@ -4,16 +4,20 @@ Target environment: `mini_m2` — Mac mini M2 running macOS, Homebrew nginx as a
 
 ## Layout chosen
 
-- `/pharos/` on the nginx gateway serves the Vite static build.
-- `/pharos/api/` and `/pharos/ws` reverse-proxy to pharosd on `127.0.0.1:3099`.
-- Subpath matches the existing nginx convention on this gateway (`/ollama`, `/jellyfin/`, `/homeassistant/`, etc.).
+`pharos.snaix.homes` (subdomain) routes through the CF tunnel into nginx on `:8080`. A dedicated nginx server block matches `server_name pharos.snaix.homes` and serves:
+
+- `/` — Vite static build from `~/sites/pharos-console/`
+- `/api/*` — reverse-proxy to pharosd on `127.0.0.1:3099`
+- `/ws` — reverse-proxy WebSocket to pharosd
+
+LLM inference is on **A100_j** (`100.73.132.43:11434`, Tailscale), running Ollama with `qwen3:32b`. pharosd is configured to point at it for all five tiers.
 
 ## Frontend
 
-Build with subpath env:
+Build (root deploy — no subpath since we use a dedicated subdomain):
 
 ```sh
-npm run build:pharos
+npm run build
 ```
 
 Sync dist to the Mac mini:
@@ -76,13 +80,21 @@ Load:
 launchctl load ~/Library/LaunchAgents/dev.pharos.server.plist
 ```
 
-### LLM provider env (this is the deployment gap)
+### LLM provider env
 
-pharosd refuses to start without a configured LLM provider. On this machine neither Ollama, Claude CLI, nor an API key was set up — pick one:
+pharosd refuses to start without a configured LLM provider. The `EnvironmentVariables` block in the deployed plist points at A100_j Ollama:
 
-- **Ollama** — `brew install ollama`, `ollama pull qwen3:32b`, set `LLM_PROVIDER=ollama`, `OLLAMA_BASE_URL=http://127.0.0.1:11434`, `OLLAMA_TIER_1..5=qwen3:32b` in the plist's `EnvironmentVariables`.
-- **Claude Code CLI** — `npm install -g @anthropic-ai/claude-code`, run `claude` once to log in, set `LLM_PROVIDER=anthropic` + `ANTHROPIC_TIER_1..5` to model names.
-- **OpenAI-compat remote** — set `LLM_PROVIDER=openai`, `OPENAI_BASE_URL`, `OPENAI_API_KEY`, `OPENAI_TIER_1..5`.
+```xml
+<key>LLM_PROVIDER</key><string>ollama</string>
+<key>OLLAMA_BASE_URL</key><string>http://100.73.132.43:11434</string>
+<key>OLLAMA_TIER_1</key><string>qwen3:32b</string>
+<key>OLLAMA_TIER_2</key><string>qwen3:32b</string>
+<key>OLLAMA_TIER_3</key><string>qwen3:32b</string>
+<key>OLLAMA_TIER_4</key><string>qwen3:32b</string>
+<key>OLLAMA_TIER_5</key><string>qwen3:32b</string>
+```
+
+Other supported providers (`LLM_PROVIDER=anthropic` with `ANTHROPIC_TIER_1..5`; `LLM_PROVIDER=openai` with `OPENAI_BASE_URL`/`OPENAI_API_KEY`/`OPENAI_TIER_1..5`) are configurable the same way.
 
 Reload the agent after editing the plist:
 
@@ -93,29 +105,35 @@ launchctl load ~/Library/LaunchAgents/dev.pharos.server.plist
 
 ## Nginx
 
-The existing `/opt/homebrew/etc/nginx/nginx.conf` has its single `server { listen 8080; ... }` block; this deploy inserts three location blocks before the catch-all `location /`:
+The existing `/opt/homebrew/etc/nginx/nginx.conf` has its catch-all `server { listen 8080; ... }` block (no `server_name`). The deploy:
+
+1. Adds `include mime.types; default_type application/octet-stream;` at the top of the `http {}` block so static assets get the correct Content-Type (without this, all .js/.css files served as `text/plain` and the browser refuses to execute them).
+2. Adds a dedicated server block for `pharos.snaix.homes`:
 
 ```nginx
-# ---- Pharos backend ----
-# WS must come BEFORE /pharos/ so it doesn't fall through to the static handler.
-location = /pharos/ws {
-    proxy_pass http://127.0.0.1:3099/ws;
-    proxy_http_version 1.1;
-    proxy_set_header Upgrade $http_upgrade;
-    proxy_set_header Connection $connection_upgrade;
-    proxy_set_header Host $host;
-    proxy_read_timeout 1h;
-}
+server {
+    listen 8080;
+    server_name pharos.snaix.homes;
 
-location /pharos/api/ {
-    proxy_pass http://127.0.0.1:3099/api/;
-    proxy_read_timeout 360s;
-}
+    location = /ws {
+        proxy_pass http://127.0.0.1:3099/ws;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+        proxy_set_header Host $host;
+        proxy_read_timeout 1h;
+    }
 
-location /pharos/ {
-    alias /Users/snaix/sites/pharos-console/;
-    index index.html;
-    try_files $uri $uri/ /pharos/index.html;
+    location /api/ {
+        proxy_pass http://127.0.0.1:3099/api/;
+        proxy_read_timeout 360s;
+    }
+
+    location / {
+        root /Users/snaix/sites/pharos-console;
+        index index.html;
+        try_files $uri $uri/ /index.html;
+    }
 }
 ```
 
@@ -130,7 +148,11 @@ sudo nginx -s reload
 
 ## Cloudflare Tunnel
 
-Already configured as a `LaunchDaemon` with a tunnel token pointing at the local gateway. Routes `<public-hostname>/pharos/*` → `http://127.0.0.1:8080/pharos/*` via the CF dashboard's ingress rules. No local config change needed if the ingress is already `http://127.0.0.1:8080` for the catch-all path.
+Token-based tunnel (LaunchDaemon `com.cloudflare.cloudflared`) — ingress routes are managed remotely via the CF Zero Trust dashboard. Add:
+
+- **Public hostname:** `pharos.snaix.homes` → `HTTP` → `localhost:8080`
+
+cloudflared forwards the original `Host: pharos.snaix.homes`, which nginx matches on `server_name`. No HTTP host header override needed.
 
 ## Rollback
 
@@ -143,18 +165,24 @@ Already configured as a `LaunchDaemon` with a tunnel token pointing at the local
 On the mini:
 
 ```sh
-# frontend reachable via nginx (after reload)
-curl -I http://127.0.0.1:8080/pharos/
-# backend reachable directly (after LLM env is set and agent loaded)
+# static reachable through nginx with correct Host
+curl -I -H "Host: pharos.snaix.homes" http://127.0.0.1:8080/
+# backend reachable directly
 curl http://127.0.0.1:3099/api/status
 # backend reachable through nginx
-curl http://127.0.0.1:8080/pharos/api/status
+curl -H "Host: pharos.snaix.homes" http://127.0.0.1:8080/api/status
+# WS upgrade
+curl -o /dev/null -w "%{http_code}\n" -H "Host: pharos.snaix.homes" \
+    -H "Connection: Upgrade" -H "Upgrade: websocket" \
+    -H "Sec-WebSocket-Version: 13" -H "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==" \
+    http://127.0.0.1:8080/ws
 ```
 
 Via the public CF hostname:
 
 ```sh
-curl -I https://<your-hostname>/pharos/
+curl -I https://pharos.snaix.homes/
+curl https://pharos.snaix.homes/api/status
 ```
 
-Browser: open `https://<hostname>/pharos/`, submit a task. The WS should connect within a second; the event stream fills as the task runs.
+Browser: open `https://pharos.snaix.homes/`, submit a task. The WS should connect within a second; the event stream fills as the task runs.

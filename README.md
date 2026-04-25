@@ -42,13 +42,7 @@ Edit `vite.config.ts` to point at a remote backend if you're not running pharosd
 npm run build
 ```
 
-For the mini_m2 subpath deploy (served at `/pharos/` behind nginx):
-
-```sh
-npm run build:pharos
-```
-
-Output lands in `dist/`.
+Output lands in `dist/`. The current production deploy lives at https://pharos.snaix.homes/ (mini_m2 + Cloudflare Tunnel) — see [`docs/DEPLOY.md`](docs/DEPLOY.md).
 
 ## Deploy
 

@@ -7,7 +7,6 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "build:pharos": "BASE_PATH=/pharos/ VITE_API_BASE=/pharos/api VITE_WS_URL=/pharos/ws npm run build",
     "lint": "eslint .",
     "preview": "vite preview"
   },

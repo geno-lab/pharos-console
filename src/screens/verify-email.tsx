@@ -64,7 +64,10 @@ export function VerifyEmailScreen() {
     <div className="canvas canvas-auth">
       <header className="auth-header">
         <h1 className="masthead-title">§ verify</h1>
-        <p className="masthead-sub">enter the 6-digit code we emailed you</p>
+        <p className="masthead-sub">
+          enter the 6-digit code we emailed you. didn't arrive within a minute?
+          hit "resend" below.
+        </p>
       </header>
 
       <form className="auth-form" onSubmit={submit}>

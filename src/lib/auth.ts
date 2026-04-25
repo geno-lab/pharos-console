@@ -18,16 +18,30 @@ export const useAuth = create<AuthState>((set) => ({
   user: null,
 
   refresh: async () => {
+    const attempt = () => api.me();
     try {
-      const user = await api.me();
+      const user = await attempt();
+      set({ status: "authed", user });
+      return;
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 401) {
+        set({ status: "anon", user: null });
+        return;
+      }
+      // Network or 5xx: try once more after a beat. A transient backend hiccup
+      // shouldn't kick everyone to /login.
+      await new Promise((r) => setTimeout(r, 1500));
+    }
+    try {
+      const user = await attempt();
       set({ status: "authed", user });
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) {
         set({ status: "anon", user: null });
       } else {
-        // Network error or 5xx — treat as unknown but don't kick the user out;
-        // they may already have a valid cookie that the server can't verify
-        // right now (e.g. transient DB issue).
+        // Still failing. Fall back to anon so the user sees /login and can
+        // re-authenticate when the backend recovers, rather than spinning
+        // on a forever-loading screen.
         set({ status: "anon", user: null });
       }
     }

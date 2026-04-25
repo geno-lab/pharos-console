@@ -113,6 +113,14 @@ export function SignupScreen() {
             {submitting ? "creating…" : "create account →"}
           </button>
         </div>
+
+        <div className="oauth-divider">
+          <span>or</span>
+        </div>
+
+        <a className="btn btn-oauth" href="/api/auth/oauth/github/start">
+          ⊕ continue with github
+        </a>
       </form>
     </div>
   );

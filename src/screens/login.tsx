@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { api, ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
@@ -13,6 +13,15 @@ export function LoginScreen() {
   const location = useLocation();
   const redirectTo =
     (location.state as { from?: string } | null)?.from ?? "/";
+
+  // Surface GitHub OAuth callback errors via ?oauth_error=… query param.
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const oauthErr = params.get("oauth_error");
+    if (oauthErr) {
+      setError(`GitHub sign-in failed: ${oauthErr.replace(/_/g, " ")}`);
+    }
+  }, [location.search]);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -75,6 +84,14 @@ export function LoginScreen() {
             {submitting ? "logging in…" : "log in →"}
           </button>
         </div>
+
+        <div className="oauth-divider">
+          <span>or</span>
+        </div>
+
+        <a className="btn btn-oauth" href="/api/auth/oauth/github/start">
+          ⊕ continue with github
+        </a>
       </form>
     </div>
   );

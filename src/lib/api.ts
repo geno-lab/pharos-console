@@ -59,7 +59,7 @@ export const api = {
   skills: () => send<SkillInfo[]>("/skills"),
   status: () => send<RunStatus>("/status"),
   run: (task: string, supervisor?: string, commander?: string) =>
-    send<{ status: string }>("/run", {
+    send<{ status: string; run_id?: string; position?: number }>("/run", {
       method: "POST",
       body: JSON.stringify({ task, supervisor, commander }),
     }),

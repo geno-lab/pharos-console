@@ -8,6 +8,7 @@ import { useTimeAgo } from "../lib/timeago";
 export function LiveScreen() {
   const events = useRun((s) => s.events);
   const phase = useRun((s) => s.phase);
+  const position = useRun((s) => s.position);
   const result = useRun((s) => s.result);
   const error = useRun((s) => s.error);
   const lastEventAt = useRun((s) => s.lastEventAt);
@@ -58,13 +59,22 @@ export function LiveScreen() {
         <div className="run-header-right">
           <div className="caps-label">phase</div>
           <div className="mono-meta phase-value">{phaseLabel}</div>
-          {phase === "running" && (
+          {(phase === "running" || phase === "queued") && (
             <button className="btn btn-cancel" onClick={cancel} disabled={cancelling}>
-              {cancelling ? "cancelling…" : "× interrupt"}
+              {cancelling ? "cancelling…" : phase === "queued" ? "× leave queue" : "× interrupt"}
             </button>
           )}
         </div>
       </header>
+
+      {phase === "queued" && (
+        <div className="activity-bar">
+          <span className="dot dot-stale" />
+          <span className="mono-meta">
+            queued · #{position ?? "?"} in line · waiting for the worker
+          </span>
+        </div>
+      )}
 
       {phase === "running" && (
         <div className={stale ? "activity-bar activity-bar-stale" : "activity-bar"}>

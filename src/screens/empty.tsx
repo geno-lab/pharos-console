@@ -8,6 +8,7 @@ export function EmptyScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const resetRun = useRun((s) => s.resetRun);
+  const setQueued = useRun((s) => s.setQueued);
 
   const submit = async () => {
     if (!task.trim() || submitting) return;
@@ -15,7 +16,10 @@ export function EmptyScreen() {
     setError(null);
     try {
       resetRun();
-      await api.run(task);
+      const res = await api.run(task);
+      if (res.run_id && typeof res.position === "number") {
+        setQueued(res.run_id, res.position);
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {

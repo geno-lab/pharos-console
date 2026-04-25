@@ -127,7 +127,11 @@ function AppHome() {
   }, [setSkills]);
 
   const runActive =
-    phase === "running" || events.length > 0 || phase === "completed" || phase === "failed";
+    phase === "queued" ||
+    phase === "running" ||
+    events.length > 0 ||
+    phase === "completed" ||
+    phase === "failed";
 
   return <Shell>{runActive ? <LiveScreen /> : <EmptyScreen />}</Shell>;
 }

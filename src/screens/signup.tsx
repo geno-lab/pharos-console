@@ -7,6 +7,7 @@ export function SignupScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [inviteCode, setInviteCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const setUser = useAuth((s) => s.setUser);
@@ -26,12 +27,14 @@ export function SignupScreen() {
     setSubmitting(true);
     setError(null);
     try {
-      const user = await api.signup(email, password);
+      const user = await api.signup(email, password, inviteCode.trim() || undefined);
       setUser(user);
       navigate("/verify-email", { replace: true, state: { email: user.email } });
     } catch (err) {
       if (err instanceof ApiError) {
         if (err.status === 409) setError("email already registered");
+        else if (err.status === 403) setError("invite code is invalid, expired, or already used");
+        else if (err.status === 400 && err.body?.includes("invite")) setError("invite code required");
         else setError(err.body || err.message);
       } else {
         setError(String(err));
@@ -82,6 +85,17 @@ export function SignupScreen() {
             autoComplete="new-password"
             minLength={8}
             required
+          />
+        </label>
+
+        <label className="auth-field">
+          <span className="caps-label">invite code</span>
+          <input
+            type="text"
+            value={inviteCode}
+            onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+            autoComplete="off"
+            placeholder="ask the admin"
           />
         </label>
 

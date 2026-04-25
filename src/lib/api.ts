@@ -9,6 +9,15 @@ export interface AuthUser {
   id: string;
   email: string;
   email_verified: boolean;
+  is_admin: boolean;
+}
+
+export interface InviteCode {
+  code: string;
+  created_at: number;
+  used_at: number | null;
+  used_by_email: string | null;
+  note: string | null;
 }
 
 export class ApiError extends Error {
@@ -56,10 +65,10 @@ export const api = {
     }),
   cancel: () => send<{ status: string }>("/run", { method: "DELETE" }),
 
-  signup: (email: string, password: string) =>
+  signup: (email: string, password: string, invite_code?: string) =>
     send<AuthUser>("/auth/signup", {
       method: "POST",
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, invite_code }),
     }),
   login: (email: string, password: string) =>
     send<AuthUser>("/auth/login", {
@@ -87,5 +96,14 @@ export const api = {
   runs: {
     list: (limit = 50) => send<RunSummary[]>(`/runs?limit=${limit}`),
     detail: (id: string) => send<RunDetail>(`/runs/${encodeURIComponent(id)}`),
+  },
+
+  admin: {
+    listInvites: () => send<InviteCode[]>("/admin/invites"),
+    createInvite: (note?: string) =>
+      send<{ code: string }>("/admin/invites", {
+        method: "POST",
+        body: JSON.stringify({ note }),
+      }),
   },
 };

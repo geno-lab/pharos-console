@@ -54,6 +54,11 @@ export function Shell({ children }: ShellProps) {
         <span className="spacer" />
         {status === "authed" && user && (
           <span className="user-chip">
+            {user.is_admin && (
+              <a href="/admin" className="auth-link">
+                admin
+              </a>
+            )}
             <span className="mono-meta">{user.email}</span>
             <button className="auth-link" onClick={logout}>
               logout

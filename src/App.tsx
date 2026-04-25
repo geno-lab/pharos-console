@@ -8,6 +8,7 @@ import { SignupScreen } from "./screens/signup";
 import { VerifyEmailScreen } from "./screens/verify-email";
 import { RunsListScreen } from "./screens/runs";
 import { RunDetailScreen } from "./screens/run-detail";
+import { AdminScreen } from "./screens/admin";
 import { useEventStream } from "./lib/ws";
 import { api, ApiError } from "./lib/api";
 import { useRun } from "./lib/store";
@@ -45,6 +46,16 @@ export function App() {
               <Protected>
                 <Shell>
                   <RunDetailScreen />
+                </Shell>
+              </Protected>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <Protected>
+                <Shell>
+                  <AdminScreen />
                 </Shell>
               </Protected>
             }

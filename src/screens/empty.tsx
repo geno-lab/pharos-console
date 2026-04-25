@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { api } from "../lib/api";
 import { useRun } from "../lib/store";
 
@@ -50,10 +51,15 @@ export function EmptyScreen() {
       {error && <div className="error">{error}</div>}
 
       <div className="submit-row">
-        <span className="mono-meta">⌘ + enter</span>
-        <button className="btn" onClick={submit} disabled={!task.trim() || submitting}>
-          {submitting ? "submitting…" : "execute →"}
-        </button>
+        <Link to="/runs" className="auth-link">
+          past runs ↓
+        </Link>
+        <div className="submit-row-right">
+          <span className="mono-meta">⌘ + enter</span>
+          <button className="btn" onClick={submit} disabled={!task.trim() || submitting}>
+            {submitting ? "submitting…" : "execute →"}
+          </button>
+        </div>
       </div>
     </div>
   );

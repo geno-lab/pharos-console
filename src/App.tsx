@@ -6,6 +6,8 @@ import { LiveScreen } from "./screens/live";
 import { LoginScreen } from "./screens/login";
 import { SignupScreen } from "./screens/signup";
 import { VerifyEmailScreen } from "./screens/verify-email";
+import { RunsListScreen } from "./screens/runs";
+import { RunDetailScreen } from "./screens/run-detail";
 import { useEventStream } from "./lib/ws";
 import { api, ApiError } from "./lib/api";
 import { useRun } from "./lib/store";
@@ -24,6 +26,26 @@ export function App() {
             element={
               <Protected>
                 <AppHome />
+              </Protected>
+            }
+          />
+          <Route
+            path="/runs"
+            element={
+              <Protected>
+                <Shell>
+                  <RunsListScreen />
+                </Shell>
+              </Protected>
+            }
+          />
+          <Route
+            path="/runs/:id"
+            element={
+              <Protected>
+                <Shell>
+                  <RunDetailScreen />
+                </Shell>
               </Protected>
             }
           />

@@ -1,4 +1,6 @@
 import type { RunStatus, SkillInfo } from "../bindings";
+import type { RunSummary } from "../bindings/RunSummary";
+import type { RunDetail } from "../bindings/RunDetail";
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? "/api";
 const WS_URL = import.meta.env.VITE_WS_URL ?? "/ws";
@@ -81,4 +83,9 @@ export const api = {
       },
       "none",
     ),
+
+  runs: {
+    list: (limit = 50) => send<RunSummary[]>(`/runs?limit=${limit}`),
+    detail: (id: string) => send<RunDetail>(`/runs/${encodeURIComponent(id)}`),
+  },
 };

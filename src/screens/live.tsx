@@ -1,20 +1,40 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useRun } from "../lib/store";
 import type { Event as PharosEvent } from "../bindings";
 import { AgentStamp, VerdictPill } from "../components/shape";
+import { api } from "../lib/api";
+import { useTimeAgo } from "../lib/timeago";
 
 export function LiveScreen() {
   const events = useRun((s) => s.events);
   const phase = useRun((s) => s.phase);
   const result = useRun((s) => s.result);
   const error = useRun((s) => s.error);
+  const lastEventAt = useRun((s) => s.lastEventAt);
   const resetRun = useRun((s) => s.resetRun);
   const streamRef = useRef<HTMLDivElement>(null);
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
+  const ago = useTimeAgo(lastEventAt);
+  const stale = lastEventAt != null && Date.now() - lastEventAt > 30_000;
 
   useEffect(() => {
     const el = streamRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [events.length]);
+
+  const cancel = async () => {
+    if (cancelling) return;
+    setCancelling(true);
+    setCancelError(null);
+    try {
+      await api.cancel();
+    } catch (e) {
+      setCancelError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setCancelling(false);
+    }
+  };
 
   const latestPhaseEvent = [...events].reverse().find((e) => e.type === "phase_changed");
   const phaseLabel =
@@ -35,11 +55,29 @@ export function LiveScreen() {
             {firstTask(events) ?? <span className="mono-meta">(waiting)</span>}
           </div>
         </div>
-        <div>
+        <div className="run-header-right">
           <div className="caps-label">phase</div>
           <div className="mono-meta phase-value">{phaseLabel}</div>
+          {phase === "running" && (
+            <button className="btn btn-cancel" onClick={cancel} disabled={cancelling}>
+              {cancelling ? "cancelling…" : "× interrupt"}
+            </button>
+          )}
         </div>
       </header>
+
+      {phase === "running" && (
+        <div className={stale ? "activity-bar activity-bar-stale" : "activity-bar"}>
+          <span className={stale ? "dot dot-stale" : "dot dot-live"} />
+          <span className="mono-meta">
+            {stale ? "no events" : "live"}
+            {ago && ` · last event ${ago}`}
+            {events.length > 0 && ` · ${events.length} total`}
+          </span>
+        </div>
+      )}
+
+      {cancelError && <div className="error">{cancelError}</div>}
 
       <section className="stream-panel">
         <div className="stream-toolbar">

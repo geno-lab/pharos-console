@@ -21,6 +21,7 @@ interface RunState {
   result?: string;
   error?: string;
   connected: boolean;
+  lastEventAt?: number;
 
   setSkills: (skills: SkillInfo[]) => void;
   setConnected: (connected: boolean) => void;
@@ -39,20 +40,34 @@ export const useRun = create<RunState>((set) => ({
 
   applyMessage: (msg) =>
     set((state) => {
+      const now = Date.now();
       switch (msg.type) {
         case "task_status":
-          return { phase: msg.status === "running" ? "running" : "idle" };
+          return {
+            phase: msg.status === "running" ? "running" : "idle",
+            lastEventAt: now,
+          };
         case "task_result":
           return {
             phase: msg.status,
             result: msg.output,
             error: msg.error,
+            lastEventAt: now,
           };
         default:
-          return { events: [...state.events, msg as PharosEvent] };
+          return {
+            events: [...state.events, msg as PharosEvent],
+            lastEventAt: now,
+          };
       }
     }),
 
   resetRun: () =>
-    set({ events: [], phase: "idle", result: undefined, error: undefined }),
+    set({
+      events: [],
+      phase: "idle",
+      result: undefined,
+      error: undefined,
+      lastEventAt: undefined,
+    }),
 }));

@@ -27,4 +27,6 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ task, supervisor, commander }),
     }),
+  cancel: () =>
+    json<{ status: string } | { error: string }>("/run", { method: "DELETE" }),
 };
